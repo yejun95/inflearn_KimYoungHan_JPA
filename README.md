@@ -93,13 +93,56 @@
 <br>
 <br>
 
-### 학습 범위 : 1-8-1 - 
+### 학습 범위 : 1-8-1 - 1-8-4
 - 프록시
   - `em.getReference()` : 데이터베이스 조회를 미루는 가짜(프록시) 엔티티 객체 조회 -> db에 쿼리가 안나가고 조회
   - 실제로 값을 get으로 꺼내올 때 쿼리가 나감
   - 영속성 컨텍스트에 찾는 엔티티가 이미 있으면 `em.getReference()`를 호출해도 실제 엔티티 반환
   - 프록시 강제 초기화 : `Hibernate.initialize(entity)` -> JPA 표준은 강제 호출 없음
+<br>
 
-- 즉시 로딩
+- 지연 로딩 : `fetch = FetchType.LAZY`
+  - proxy 통해 가져오기 때문에 필요한 엔티티를 조회 할 때 초기화가 됨
+<br>
 
-- 지연 로딩
+- 즉시 로딩 : `fetch = FetchType.EAGER`
+  - 조인된 엔티티를 무조건 가져옴 (proxy 사용 x)
+  - 실무에서는 가급적 지연 로딩만 사용해야 함
+  - 예상하지 못한 SQL이 발생할 수도 있음
+  - JPQL에서 N+1 문제를 일으킴 -> SQL로 변환이 된 쿼리가 실행되고, `EAGER` 확인 후 또 실행하기 때문 -> `fetch join` 을 통한 해결 방법 존재
+  - 💡 `@ManyToOne`, `@OneToOne`은 기본이 즉시 로딩이기 때문에 LAZY 설정 필수
+  - `@OneToMany`, `@ManyToMany`는 기본이 지연 로딩
+<br>
+
+- 영속성 전이 : CASCADE
+  - `cascade = CascadeType.ALL) : parent 엔티티에 속한 child 엔티티를 자동으로 persist 해줌
+  - child가 독립적인 parent에만 의존적일 때 사용
+<br>
+
+- 고아 객체 : 부모 엔티티와 연관관계가 끊어진 자식 엔티티
+  - 고아 객체 제거 : `orphanRemoval = true `
+  - child가 참조하는 부모가 하나일 때만 사용 (CascadeType.REMOVE 처럼 동작)
+<br>
+
+- 연관관계 관리 예제
+<br>
+<br>
+
+### 학습 범위 : 1-9-1 - 
+- 기본값 타입 : 생명주기를 엔티티에 의존
+  - 자바 기본 타입(int, double)
+  - 래퍼 클래스(Integer, Long)
+  - String
+<br>
+
+- 엠비디드 타입(복합 값 타입) : 새로운 값 타입을 직접 정의
+  - 주로 기본 값 타입을 모아 만들어서 복합 값 타입이라고도 함
+  - `@Embeddable` : 값 타입을 정의하는 곳에 표시
+  - `@Embedded` : 값 타입을 사용하는 곳에 표시 
+  - 기본 생성자 필수
+  - 기본 값 타입과 동일하게 엔티티에 생명주기를 의존
+  - 공유 참조로 인한 위험성 때문에 여러 엔티티에서 동시 사용 불가능 -> deep copy로 사용 가능하기는 함
+  - 불변 객체로 생성하여 Setter를 없애고 생성자로만 값을 설정하도록 설계
+<br>
+
+- 컬렉션 값 타입
