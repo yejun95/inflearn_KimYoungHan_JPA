@@ -234,3 +234,42 @@ from Team t
 
 - JPQL 기본 함수
   - CONCAT, SUBSTRING, TRIM, LOWER, UPPER, LENGTH, LOCATE, ABS, SQRT, MOD, SIZE, INDEX
+<br>
+<br>
+
+### 학습 범위 : 1-11-1 - 
+- 경로 표현식 : .(점)을 찍어 객체 그래프를 탐색하는 것
+  - 명시적 조인 : `select m from Member join m.team` -> 가급적 명시적 조인 사용
+  - 묵시적 조인 : `select m.team from Member` -> 항상 내부 조인이다.
+<br>
+
+- 페치 조인(fetch join) : JPQL에서 성능 최적화를 위해 제공하는 기능
+  - `select m from Member m join fetch m.team` : 연관된 팀도 함께 조회 가능
+  - 페치 조인 사용 시 지연 로딩을 무시하고 한번에 조회함
+  - 일대다(OneToMany) 페치 조인은 데이터 뻥튀기 조심 (distinct 사용)
+  - 즉, 조회 시점에 데이터를 전부 가져오기 위해 사용 (즉시 로딩) -> 일반 조인은 실행시 연관된 엔티티를 함께 조회하지 않음
+  - 단지 `select` 절에 지정한 엔티티만 조회할 뿐이다.
+<br>
+
+- 다형성 쿼리 : 조회 대상을 특정 자식으로 한정
+  -  `select i from Item i where type(i) IN (Book, Movie)` -> `select i from i where i.DTYPE in ('B', 'M')`
+<br>
+
+- 엔티티 직접 사용 : JPQL에서 엔티티를 직접 사용하면 SQL에서 해당 엔티티의 기본 키 값을 사용
+  - `select count(m.id) from Member m ` : 엔티티의 아이디를 사용
+  - `select count(m) from Member m` : 엔티티를 직접 사용 -> 엔티티의 기본 키 값이 사용된다.
+  - 어차피 둘 다 같은 SQL이 실행된다. 
+<br>
+
+- Named 쿼리 : 미리 정의해서 이름을 부여해두고 사용하는 JPQL
+  - 정적 쿼리만 가능
+  - 어노테이션이나 XML에 정의
+  - 애플리케이션 로딩 시점에 SQL로 파싱하여 캐싱하고 있음
+  - 애플리케이션 로딩 시점에 쿼리를 검증해줌!!!!!!!!
+<br>
+
+- 벌크 연산 : 변경된 데이터가 100건 일 때, 100번 UPDATE를 실행 해야 한다면??
+  - JPA의 변경 감지 기능으로 실행하려면 너무 많은 SQL이 실행된다.
+  - 쿼리 한 번으로 여러 테이블 로우를 변경(엔티티)
+  - `em.createQuery().executeUpdate()`
+  - 주의 : 영속성 컨텍스트를 무시하고 데이터베이스에 직접 쿼리 -> 벌크 연산 수행 후 영속성 컨텍스트를 초기화 ㅂ
