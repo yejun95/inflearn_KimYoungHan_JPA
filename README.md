@@ -128,7 +128,7 @@
 <br>
 <br>
 
-### 학습 범위 : 1-9-1 - 
+### 학습 범위 : 1-9-1 - 1-9-6
 - 기본값 타입 : 생명주기를 엔티티에 의존
   - 자바 기본 타입(int, double)
   - 래퍼 클래스(Integer, Long)
@@ -141,8 +141,135 @@
   - `@Embedded` : 값 타입을 사용하는 곳에 표시 
   - 기본 생성자 필수
   - 기본 값 타입과 동일하게 엔티티에 생명주기를 의존
-  - 공유 참조로 인한 위험성 때문에 여러 엔티티에서 동시 사용 불가능 -> deep copy로 사용 가능하기는 함
+  - 공유 참조로 인한 위험성 때문에 엔티티 안에서 동시 사용 불가능 -> deep copy로 사용 가능하기는 함
   - 불변 객체로 생성하여 Setter를 없애고 생성자로만 값을 설정하도록 설계
 <br>
 
 - 컬렉션 값 타입
+  - 값 타입을 하나 이상 저장할 때 사용
+  - `@ElementCollection`
+  - `@CollectionTable`
+<br>
+
+- 값 타입 매핑 예제
+<br>
+<hr>
+<br>
+
+## ✔️ jpql directory
+### 학습 범위 : 1-10-1 - 1-10-9
+- 해당 directory는 학습 코드를 지우고 새로 적으면서 진행했기에 소스코드가 온전하지 않음.
+
+- JPQL 소개 및 사용
+
+- 기본 문법과 쿼리 API
+  - `TypeQuery`, `query`
+  - `getResultList`, `getSingleResult`
+<br>
+
+- 프로젝션 (select) : 영속성 컨텍스트로 관리됨
+  - 엔티티 프로젝션 : `select m from Member m, Member.class`
+  - 임베디드 타입 프로젝션 : `select m.address from Member m, Address.class`
+  - 스칼라 타입 프로젝션 : `select m.age, m.username from Member m`
+<br>
+
+- 페이징
+  - `setFirstResult` : 조회 시작 위치
+  - `setMaxResults` : 조회할 데이터 수
+<br>
+
+- 조인
+  - 내부조인 : `select m from Member m [INNER] JOIN m.team t`
+  - 외부조인 : `select m from Member m LEFT [OUTER] JOIN m.team t`
+  - 세타조인 : `select count(m) from Member m, Team t where m.username = t.name`
+  - 연관 관계 없는 엔티티 외부 조인 : `select m, t from Member m LEFT JOIN Team t on m.username = t.name`
+<br>
+
+- 서브쿼리
+  - JPA는 WHERE, HAVING 절에서만 서브 쿼리 사용 가능 -> 하이버네이트는 FROM에서도 가능
+  - FROM절의 서브쿼리는 JPQL에서 불가능
+  - 나이가 평균보다 많은 회원 : `select m from Member m where m.age > (select avg(m2.age) from Member m2`
+  - 한 건이라도 주문한 고객 : `select m from Member m where (select count(o) from Order o where m = o.member) > 0`
+  - [NOT] exists
+  - ALL, ANY, SOME
+  - [NOT] IN
+<br>
+
+- JPQL 타입 표현
+  - 문자 : 싱글 코테이션
+  - 숫자 : 10L, 10D, 10F
+  - Boolean: TRUE, FALSE
+  - ENUM: jpabook.MemberType.admin (패키지명 포함)
+  - 엔티티 타입: TYPE(m) = Member (상속 관계에서 사용)
+<br>
+
+**조건식**
+- 기본 CASE 식
+```sql
+select
+  case when m.age <= 10 then '학생요금'
+  case when m.age >= 60 then '경로요금'
+       else '일반요금'
+  end
+from Member m
+```
+<br>
+
+- 단순 CASE 식
+```sql
+select
+  case t.name
+    when '팀A' then '인센티브110%'
+    when '팀B' then '인센티브120%'
+    else '인센티브105%'
+  end
+from Team t
+```
+<br>
+
+- clalesce: 하나씩 조회해서 null이 아니면 반환
+
+- NULLIF: 두 값이 같으면 null 반환, 다르면 첫번째 값 반환
+<br>
+
+- JPQL 기본 함수
+  - CONCAT, SUBSTRING, TRIM, LOWER, UPPER, LENGTH, LOCATE, ABS, SQRT, MOD, SIZE, INDEX
+<br>
+<br>
+
+### 학습 범위 : 1-11-1 - 
+- 경로 표현식 : .(점)을 찍어 객체 그래프를 탐색하는 것
+  - 명시적 조인 : `select m from Member join m.team` -> 가급적 명시적 조인 사용
+  - 묵시적 조인 : `select m.team from Member` -> 항상 내부 조인이다.
+<br>
+
+- 페치 조인(fetch join) : JPQL에서 성능 최적화를 위해 제공하는 기능
+  - `select m from Member m join fetch m.team` : 연관된 팀도 함께 조회 가능
+  - 페치 조인 사용 시 지연 로딩을 무시하고 한번에 조회함
+  - 일대다(OneToMany) 페치 조인은 데이터 뻥튀기 조심 (distinct 사용)
+  - 즉, 조회 시점에 데이터를 전부 가져오기 위해 사용 (즉시 로딩) -> 일반 조인은 실행시 연관된 엔티티를 함께 조회하지 않음
+  - 단지 `select` 절에 지정한 엔티티만 조회할 뿐이다.
+<br>
+
+- 다형성 쿼리 : 조회 대상을 특정 자식으로 한정
+  -  `select i from Item i where type(i) IN (Book, Movie)` -> `select i from i where i.DTYPE in ('B', 'M')`
+<br>
+
+- 엔티티 직접 사용 : JPQL에서 엔티티를 직접 사용하면 SQL에서 해당 엔티티의 기본 키 값을 사용
+  - `select count(m.id) from Member m ` : 엔티티의 아이디를 사용
+  - `select count(m) from Member m` : 엔티티를 직접 사용 -> 엔티티의 기본 키 값이 사용된다.
+  - 어차피 둘 다 같은 SQL이 실행된다. 
+<br>
+
+- Named 쿼리 : 미리 정의해서 이름을 부여해두고 사용하는 JPQL
+  - 정적 쿼리만 가능
+  - 어노테이션이나 XML에 정의
+  - 애플리케이션 로딩 시점에 SQL로 파싱하여 캐싱하고 있음
+  - 애플리케이션 로딩 시점에 쿼리를 검증해줌!!!!!!!!
+<br>
+
+- 벌크 연산 : 변경된 데이터가 100건 일 때, 100번 UPDATE를 실행 해야 한다면??
+  - JPA의 변경 감지 기능으로 실행하려면 너무 많은 SQL이 실행된다.
+  - 쿼리 한 번으로 여러 테이블 로우를 변경(엔티티)
+  - `em.createQuery().executeUpdate()`
+  - 주의 : 영속성 컨텍스트를 무시하고 데이터베이스에 직접 쿼리 -> 벌크 연산 수행 후 영속성 컨텍스트를 초기화 ㅂ
