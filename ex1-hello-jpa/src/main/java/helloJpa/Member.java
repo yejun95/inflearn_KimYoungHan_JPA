@@ -1,7 +1,6 @@
 package helloJpa;
 
 import javax.persistence.Entity;
-import javax.persistence.EntityManager;
 import javax.persistence.Id;
 
 @Entity
